@@ -1,0 +1,13 @@
+{
+  "name": "prompverse",
+  "version": "1.0.0",
+  "description": "Gestor visual de prompts temáticos para IA",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No hay pruebas automatizadas\" && exit 0"
+  },
+  "keywords": ["prompts", "ia", "productividad"],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs"
+}
