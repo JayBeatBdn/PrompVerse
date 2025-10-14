@@ -1,3 +1,4 @@
+/* Variables globales y tema base de la interfaz */
 :root {
   color-scheme: dark;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
@@ -19,10 +20,12 @@
   --shadow-soft: 0 20px 45px rgba(2, 6, 23, 0.55);
 }
 
+/* Ajuste universal del modelo de caja para evitar saltos */
 * {
   box-sizing: border-box;
 }
 
+/* Lienzo general con modo oscuro y altura completa */
 body {
   margin: 0;
   min-height: 100vh;
@@ -30,8 +33,9 @@ body {
   background: transparent;
 }
 
+/* Contenedor principal con efecto glassmorphism */
 .app-container {
-  width: min(1200px, 96vw);
+  width: 80vw;
   margin: 48px auto;
   background: rgba(2, 6, 23, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.12);
@@ -39,20 +43,24 @@ body {
   box-shadow: var(--shadow-soft);
   overflow: hidden;
   backdrop-filter: blur(22px);
+  min-height: 80vh;
 }
 
+/* Mensaje temporal mostrado durante la carga */
 .loading-state {
   padding: 48px;
   text-align: center;
   color: var(--text-secondary);
 }
 
+/* Distribución principal entre barra lateral y área de trabajo */
 .dashboard {
   display: grid;
   grid-template-columns: 300px 1fr;
   min-height: 640px;
 }
 
+/* Panel lateral para navegar entre grupos de prompts */
 .sidebar {
   background: linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.8));
   border-right: 1px solid var(--border-color);
@@ -62,12 +70,14 @@ body {
   padding: 32px 28px;
 }
 
+/* Bloque contenedor del título y subtítulo del panel lateral */
 .sidebar__header {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* Título principal mostrado en la barra lateral */
 .sidebar__title {
   margin: 0;
   font-size: 1.25rem;
@@ -75,17 +85,20 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Descripción breve que contextualiza la barra lateral */
 .sidebar__subtitle {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
+/* Acciones rápidas para administrar grupos de prompts */
 .sidebar__actions {
   display: flex;
   gap: 12px;
 }
 
+/* Estilos base compartidos por todos los botones */
 .button {
   border: none;
   border-radius: var(--radius-sm);
@@ -101,39 +114,46 @@ body {
     border 0.2s ease;
 }
 
+/* Versión resaltada para llamadas a la acción importantes */
 .button--primary {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #0f172a;
   box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
 }
 
+/* Animación sutil que refuerza la interacción primaria */
 .button--primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 30px rgba(14, 165, 233, 0.45);
 }
 
+/* Versión secundaria con fondo transparente */
 .button--ghost {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+/* Ligero realce al pasar el cursor por un botón secundario */
 .button--ghost:hover {
   color: var(--text-primary);
   border-color: rgba(148, 163, 184, 0.4);
 }
 
+/* Variación destinada a acciones destructivas */
 .button--danger {
   background: rgba(248, 113, 113, 0.12);
   color: #fca5a5;
   border: 1px solid rgba(248, 113, 113, 0.35);
 }
 
+/* Feedback visual adicional para las acciones riesgosas */
 .button--danger:hover {
   color: #fecaca;
   border-color: rgba(248, 113, 113, 0.6);
 }
 
+/* Listado navegable de grupos de prompts */
 .prompt-list {
   flex: 1;
   display: flex;
@@ -143,15 +163,18 @@ body {
   padding-right: 6px;
 }
 
+/* Personalización del scroll en navegadores WebKit */
 .prompt-list::-webkit-scrollbar {
   width: 6px;
 }
 
+/* Aspecto del thumb que indica la posición en la lista */
 .prompt-list::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.2);
   border-radius: 999px;
 }
 
+/* Tarjeta que resume cada grupo dentro del listado */
 .prompt-card {
   background: linear-gradient(180deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.7));
   border: 1px solid transparent;
@@ -167,28 +190,33 @@ body {
   text-align: left;
 }
 
+/* Realce accesible para navegación mediante teclado */
 .prompt-card:focus-visible {
   outline: 2px solid rgba(56, 189, 248, 0.6);
   outline-offset: 3px;
 }
 
+/* Efecto visual al situar el puntero sobre la tarjeta */
 .prompt-card:hover {
   transform: translateY(-2px);
   border-color: rgba(14, 165, 233, 0.4);
   box-shadow: 0 14px 35px rgba(14, 165, 233, 0.2);
 }
 
+/* Estado activo del grupo seleccionado actualmente */
 .prompt-card.is-active {
   border-color: rgba(14, 165, 233, 0.6);
   box-shadow: 0 20px 40px rgba(14, 165, 233, 0.25);
 }
 
+/* Nombre del grupo mostrado en la tarjeta */
 .prompt-card__title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
 }
 
+/* Contenedor con estadísticas resumidas del grupo */
 .prompt-card__meta {
   display: flex;
   justify-content: space-between;
@@ -197,6 +225,7 @@ body {
   font-size: 0.8rem;
 }
 
+/* Detalle textual para cada estadística de la tarjeta */
 .prompt-card__meta span {
   display: inline-flex;
   align-items: center;
@@ -209,6 +238,7 @@ body {
   opacity: 0.6;
 }
 
+/* Zona de trabajo dedicada al grupo activo */
 .chat-area {
   display: flex;
   flex-direction: column;
@@ -217,12 +247,14 @@ body {
   gap: 24px;
 }
 
+/* Encabezado del editor con título y acciones */
 .chat-header {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* Distribución horizontal del título y las acciones */
 .chat-header__row {
   display: flex;
   flex-wrap: wrap;
@@ -231,12 +263,14 @@ body {
   justify-content: space-between;
 }
 
+/* Grupo de botones para administrar el grupo actual */
 .chat-header__actions {
   display: inline-flex;
   align-items: center;
   gap: 12px;
 }
 
+/* Campo editable para renombrar el grupo de prompts */
 .chat-title-input {
   flex: 1 1 280px;
   background: rgba(15, 23, 42, 0.65);
@@ -255,6 +289,7 @@ body {
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
 }
 
+/* Línea con métricas complementarias del grupo */
 .chat-meta {
   display: flex;
   gap: 16px;
@@ -262,17 +297,20 @@ body {
   font-size: 0.85rem;
 }
 
+/* Elemento individual que combina icono y texto en la métrica */
 .chat-meta__item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
+/* Normaliza el tamaño de los iconos en la sección meta */
 .chat-meta svg {
   width: 18px;
   height: 18px;
 }
 
+/* Panel que muestra la conversación del prompt */
 .chat-body {
   flex: 1;
   display: flex;
@@ -282,42 +320,49 @@ body {
   padding-right: 4px;
 }
 
+/* Estilos del scroll del panel de conversación */
 .chat-body::-webkit-scrollbar {
   width: 6px;
 }
 
+/* Aspecto del thumb dentro del cuerpo del chat */
 .chat-body::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.18);
   border-radius: 999px;
 }
 
+/* Contenedor individual para cada mensaje del prompt */
 .message {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: 640px;
+  width: 100%;
   padding: 18px;
+  align-self: stretch;
   border-radius: var(--radius-md);
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.7);
   position: relative;
 }
 
+/* Estilo que diferencia los mensajes redactados por el usuario */
 .message--user {
-  margin-left: auto;
   background: linear-gradient(160deg, rgba(14, 165, 233, 0.15), rgba(30, 58, 138, 0.4));
   border-color: rgba(56, 189, 248, 0.45);
 }
 
+/* Tono visual empleado por las respuestas del asistente */
 .message--assistant {
-  margin-right: auto;
+  align-self: stretch;
 }
 
+/* Apariencia para las instrucciones del sistema */
 .message--system {
   margin: 0 auto;
   border-style: dashed;
 }
 
+/* Fila superior con el rol y posibles acciones */
 .message__header {
   display: flex;
   justify-content: space-between;
@@ -326,12 +371,14 @@ body {
   font-size: 0.85rem;
 }
 
+/* Tipografía y espaciado del identificador de rol */
 .message__role {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
+/* Área editable para modificar el contenido de un mensaje */
 .message textarea {
   width: 100%;
   background: transparent;
@@ -345,15 +392,18 @@ body {
   outline: none;
 }
 
+/* Colorización del placeholder dentro de los mensajes */
 .message textarea::placeholder {
   color: rgba(148, 163, 184, 0.4);
 }
 
+/* Botonera contextual con acciones sobre cada mensaje */
 .message__actions {
   display: flex;
   gap: 12px;
 }
 
+/* Estilos base de cada acción individual */
 .message__actions button {
   background: transparent;
   border: none;
@@ -366,10 +416,12 @@ body {
   transition: color 0.2s ease;
 }
 
+/* Feedback al pasar el cursor sobre las acciones */
 .message__actions button:hover {
   color: var(--text-primary);
 }
 
+/* Formulario para añadir nuevos mensajes al grupo */
 .add-message {
   background: rgba(15, 23, 42, 0.6);
   border: 1px dashed rgba(148, 163, 184, 0.25);
@@ -380,6 +432,7 @@ body {
   gap: 16px;
 }
 
+/* Distribución flexible de los campos del formulario */
 .add-message__row {
   display: flex;
   flex-wrap: wrap;
@@ -387,37 +440,262 @@ body {
   align-items: flex-start;
 }
 
-.add-message select {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 10px 14px;
-  min-width: 160px;
-  font-size: 0.95rem;
-}
-
+/* Área para redactar el contenido del nuevo mensaje */
 .add-message textarea {
-  flex: 1 1 320px;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  flex: 1 1 100%;
+  min-height: 140px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  padding: 12px 16px;
+  padding: 14px 16px;
   resize: vertical;
-  min-height: 120px;
   font-size: 1rem;
   font-family: inherit;
-  line-height: 1.5;
+  line-height: 1.6;
+  caret-color: var(--accent);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.add-message textarea:focus,
-.add-message select:focus {
-  border-color: rgba(14, 165, 233, 0.6);
+/* Indicaciones para adjuntar archivos desde el formulario */
+.add-message__attachments {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Botón para abrir el selector de archivos */
+.attachment-input {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.attachment-input:hover {
+  border-color: rgba(56, 189, 248, 0.6);
+  color: var(--text-primary);
+}
+
+.attachment-input input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.attachment-input:focus-within {
+  border-color: rgba(56, 189, 248, 0.6);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+/* Texto auxiliar que guía el proceso de adjuntar */
+.attachment-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Vista previa de adjuntos pendientes antes de enviar */
+.attachment-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.attachment-preview-list.has-items {
+  padding-top: 4px;
+}
+
+/* Tarjeta compacta para cada archivo pendiente */
+.attachment-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  min-width: 0;
+}
+
+.attachment-chip__thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.attachment-chip__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.attachment-chip__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.attachment-chip__name {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachment-chip__size {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.attachment-chip__remove {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: rgba(248, 113, 113, 0.8);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.attachment-chip__remove:hover {
+  color: rgba(248, 113, 113, 1);
+}
+
+/* Distribución de acciones y atajo del formulario */
+.add-message__row--actions {
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Recordatorio del atajo de teclado del formulario */
+.add-message__hint {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Contenedor de adjuntos ya guardados en el mensaje */
+.message-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Tarjeta visual para cada adjunto guardado */
+.message-attachment {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.message-attachment__image {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.message-attachment__image img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+}
+
+.message-attachment__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, 0.2);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.message-attachment__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.message-attachment__link {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.message-attachment__link[aria-disabled='true'] {
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.message-attachment__link:hover {
+  color: var(--accent);
+}
+
+.message-attachment__size {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.message-attachment__note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.message-attachment__remove {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: rgba(248, 113, 113, 0.8);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: color 0.2s ease;
+}
+
+.message-attachment__remove:hover {
+  color: rgba(248, 113, 113, 1);
+}
+
+/* Realce visual al enfocar los campos del formulario */
+.add-message textarea:focus {
+  border-color: rgba(56, 189, 248, 0.6);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
 }
 
+/* Avisos mostrados cuando no hay datos disponibles */
 .empty-state {
   margin: auto;
   text-align: center;
@@ -425,11 +703,13 @@ body {
   max-width: 320px;
 }
 
+/* Título destacado dentro del estado vacío */
 .empty-state h3 {
   margin-bottom: 8px;
   color: var(--text-primary);
 }
 
+/* Badge que informa del estado de guardado */
 .save-indicator {
   display: inline-flex;
   align-items: center;
@@ -442,6 +722,7 @@ body {
   font-size: 0.85rem;
 }
 
+/* Punto que acompaña y refuerza el estado textual */
 .save-indicator .dot {
   width: 8px;
   height: 8px;
@@ -450,25 +731,30 @@ body {
   display: inline-block;
 }
 
+/* Colores para cuando los cambios están en proceso de guardado */
 .save-indicator[data-status='saving'] {
   color: var(--accent);
   border-color: rgba(56, 189, 248, 0.5);
 }
 
+/* Tonos verdes que confirman el guardado correcto */
 .save-indicator[data-status='saved'] {
   color: var(--success);
   border-color: rgba(52, 211, 153, 0.4);
 }
 
+/* Colores de alerta cuando la persistencia falla */
 .save-indicator[data-status='error'] {
   color: var(--danger);
   border-color: rgba(248, 113, 113, 0.45);
 }
 
+/* Utilidad para ocultar elementos sin sacarlos del flujo */
 .is-hidden {
   display: none !important;
 }
 
+/* Adaptaciones para tablets y pantallas medianas */
 @media (max-width: 980px) {
   .app-container {
     width: 100%;
@@ -487,6 +773,7 @@ body {
   }
 }
 
+/* Ajustes adicionales para móviles compactos */
 @media (max-width: 640px) {
   .chat-header__row {
     flex-direction: column;
@@ -495,6 +782,32 @@ body {
 
   .add-message__row {
     flex-direction: column;
+  }
+
+  .add-message__row--actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .add-message__hint {
+    text-align: center;
+  }
+
+  .attachment-preview-list {
+    flex-direction: column;
+  }
+
+  .attachment-chip {
+    align-items: flex-start;
+  }
+
+  .message-attachment {
+    align-items: flex-start;
+  }
+
+  .message-attachment__remove {
+    margin-left: 0;
   }
 
   .chat-area {

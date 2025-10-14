@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
+    <!-- Configuración general del documento y soporte responsive -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PrompVerse</title>
+
+    <!-- Estilos locales y preparación de fuentes -->
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,9 +16,12 @@
     />
   </head>
   <body>
+    <!-- Punto de montaje donde la aplicación inyecta la interfaz -->
     <div id="app" class="app-container">
       <div class="loading-state">Cargando PrompVerse...</div>
     </div>
+
+    <!-- Carga del bundle principal que inicializa la aplicación -->
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

@@ -1,16 +1,23 @@
+// Clave usada en localStorage para persistir el workspace
 const STORAGE_KEY = 'prompverse::workspace';
+// Tiempo de espera (ms) antes de persistir para agrupar cambios
 const SAVE_DELAY = 700;
 
+// Estado global mantenido en memoria con todo el workspace
 let appState;
+// Mapa de referencias a elementos del DOM reutilizados
 const refs = {};
+// Temporizador empleado para los guardados diferidos
 let saveTimeout = null;
 
+// Etiquetas legibles para cada rol admitido en los mensajes
 const ROLE_LABELS = {
   system: 'Sistema',
   user: 'Usuario',
   assistant: 'Asistente',
 };
 
+// Punto de entrada: inicializa la interfaz cuando el DOM estÃ¡ listo
 document.addEventListener('DOMContentLoaded', () => {
   appState = loadInitialState();
   buildLayout();
@@ -20,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLastSavedDisplay();
 });
 
+// Construye el esqueleto visual y captura referencias a la UI
 function buildLayout() {
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -27,7 +35,7 @@ function buildLayout() {
       <aside class="sidebar">
         <div class="sidebar__header">
           <h1 class="sidebar__title">PrompVerse</h1>
-          <p class="sidebar__subtitle">Gestiona, refina y organiza tus prompts temáticos.</p>
+          <p class="sidebar__subtitle">Gestiona, refina y organiza tus prompts temÃ¡ticos.</p>
         </div>
         <div class="sidebar__actions">
           <button class="button button--primary" type="button" data-action="add-group">
@@ -43,7 +51,7 @@ function buildLayout() {
               class="chat-title-input"
               data-chat-title
               type="text"
-              placeholder="Título del grupo de prompts"
+              placeholder="TÃ­tulo del grupo de prompts"
               autocomplete="off"
               spellcheck="false"
             />
@@ -66,19 +74,23 @@ function buildLayout() {
         <form class="add-message" data-add-message>
           <strong>Agregar mensaje al prompt</strong>
           <div class="add-message__row">
-            <select name="message-role" data-message-role>
-              <option value="user">Usuario</option>
-              <option value="assistant">Asistente</option>
-              <option value="system">Sistema</option>
-            </select>
             <textarea
               name="message-content"
               data-message-content
               placeholder="Describe el mensaje que deseas incorporar..."
             ></textarea>
           </div>
-          <div class="add-message__row" style="justify-content: flex-end;">
-            <button class="button button--primary" type="submit">Añadir mensaje</button>
+          <div class="add-message__attachments">
+            <label class="attachment-input">
+              <input type="file" data-message-attachments multiple />
+              <span>Adjuntar archivos</span>
+            </label>
+            <span class="attachment-hint">Puedes seleccionar varios archivos</span>
+          </div>
+          <div class="attachment-preview-list" data-attachment-preview></div>
+          <div class="add-message__row add-message__row--actions">
+            <span class="add-message__hint">Ctrl + Enter para enviar</span>
+            <button class="button button--primary" type="submit">AÃ±adir mensaje</button>
           </div>
         </form>
       </section>
@@ -93,10 +105,12 @@ function buildLayout() {
   refs.messageCount = app.querySelector('[data-message-count]');
   refs.lastSaved = app.querySelector('[data-last-saved]');
   refs.addMessageForm = app.querySelector('[data-add-message]');
-  refs.newMessageRole = app.querySelector('[data-message-role]');
   refs.newMessageContent = app.querySelector('[data-message-content]');
+  refs.attachmentInput = app.querySelector('[data-message-attachments]');
+  refs.attachmentPreview = app.querySelector('[data-attachment-preview]');
   refs.saveIndicator = app.querySelector('[data-save-indicator]');
   refs.saveText = app.querySelector('[data-save-text]');
+  refs.pendingAttachments = [];
 
   refs.addGroupButton.addEventListener('click', handleAddGroup);
   refs.deleteGroupButton.addEventListener('click', handleDeleteGroup);
@@ -105,8 +119,14 @@ function buildLayout() {
   refs.newMessageContent.addEventListener('input', (event) => {
     autoResizeTextarea(event.target);
   });
+  refs.newMessageContent.addEventListener('keydown', handleComposerKeyDown);
+  if (refs.attachmentInput) {
+    refs.attachmentInput.addEventListener('change', handleAttachmentSelection);
+  }
+  renderPendingAttachmentPreview();
 }
 
+// Renderiza la lista de grupos en la barra lateral
 function renderSidebar() {
   if (!refs.groupList) return;
   refs.groupList.innerHTML = '';
@@ -116,7 +136,7 @@ function renderSidebar() {
     empty.className = 'empty-state';
     empty.innerHTML = `
       <h3>No hay grupos creados</h3>
-      <p>Comienza añadiendo un grupo de prompts para organizar tus ideas.</p>
+      <p>Comienza aÃ±adiendo un grupo de prompts para organizar tus ideas.</p>
     `;
     refs.groupList.appendChild(empty);
     return;
@@ -129,7 +149,7 @@ function renderSidebar() {
 
     const title = document.createElement('h3');
     title.className = 'prompt-card__title';
-    title.textContent = group.title || 'Sin título';
+    title.textContent = group.title || 'Sin tÃ­tulo';
     card.appendChild(title);
 
     const meta = document.createElement('div');
@@ -156,8 +176,16 @@ function renderSidebar() {
   });
 }
 
+// Actualiza el panel principal segÃºn el grupo seleccionado
 function renderChat() {
   const group = getSelectedGroup();
+
+  clearPendingAttachments();
+  if (refs.newMessageContent) {
+    refs.newMessageContent.value = '';
+    refs.newMessageContent.style.height = '';
+    autoResizeTextarea(refs.newMessageContent);
+  }
 
   if (!group) {
     refs.titleInput.value = '';
@@ -171,7 +199,7 @@ function renderChat() {
     empty.className = 'empty-state';
     empty.innerHTML = `
       <h3>Selecciona o crea un grupo</h3>
-      <p>Podrás redactar el contexto del prompt como una conversación y se guardará automáticamente.</p>
+      <p>PodrÃ¡s redactar el contexto del prompt como una conversaciÃ³n y se guardarÃ¡ automÃ¡ticamente.</p>
     `;
     refs.messageList.appendChild(empty);
     refs.messageCount.textContent = 'Sin mensajes';
@@ -188,6 +216,8 @@ function renderChat() {
   updateMessageMeta(group);
 }
 
+// Pinta cada mensaje del grupo activo dentro del chat
+
 function renderMessages(group) {
   refs.messageList.innerHTML = '';
 
@@ -195,14 +225,18 @@ function renderMessages(group) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.innerHTML = `
-      <h3>No hay mensajes todavía</h3>
-      <p>Añade mensajes del sistema, usuario o asistente para construir tu prompt.</p>
+      <h3>No hay mensajes todavÃ­a</h3>
+      <p>Redacta un mensaje del usuario y agrega adjuntos si lo necesitas.</p>
     `;
     refs.messageList.appendChild(empty);
     return;
   }
 
   group.messages.forEach((message) => {
+    if (!Array.isArray(message.attachments)) {
+      message.attachments = [];
+    }
+
     const messageWrapper = document.createElement('article');
     messageWrapper.className = `message message--${message.role}`;
 
@@ -216,6 +250,35 @@ function renderMessages(group) {
 
     const actions = document.createElement('div');
     actions.className = 'message__actions';
+    let textareaRef = null;
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.innerHTML = createIcon('copy') + ' Copiar';
+    copyButton.addEventListener('click', () => {
+      const value = (textareaRef && textareaRef.value) || message.content || '';
+      if (!value) return;
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(value).catch((error) => {
+          console.warn('No se pudo copiar el mensaje al portapapeles', error);
+        });
+      } else {
+        try {
+          const temp = document.createElement('textarea');
+          temp.value = value;
+          temp.setAttribute('readonly', '');
+          temp.style.position = 'absolute';
+          temp.style.left = '-9999px';
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+        } catch (error) {
+          console.warn('No se pudo copiar el mensaje al portapapeles', error);
+        }
+      }
+    });
+    actions.appendChild(copyButton);
 
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
@@ -233,6 +296,7 @@ function renderMessages(group) {
     messageWrapper.appendChild(header);
 
     const textarea = document.createElement('textarea');
+    textareaRef = textarea;
     textarea.value = message.content;
     textarea.placeholder = 'Escribe el contenido de este mensaje...';
     textarea.addEventListener('input', (event) => {
@@ -241,12 +305,107 @@ function renderMessages(group) {
       autoResizeTextarea(event.target);
       scheduleSave();
     });
-    autoResizeTextarea(textarea);
     messageWrapper.appendChild(textarea);
 
+    renderMessageAttachments(message, messageWrapper, group);
+
     refs.messageList.appendChild(messageWrapper);
+    autoResizeTextarea(textarea);
   });
 }
+
+
+function renderMessageAttachments(message, wrapper, group) {
+  if (!Array.isArray(message.attachments) || !message.attachments.length) return;
+
+  const list = document.createElement('div');
+  list.className = 'message-attachments';
+
+  message.attachments.forEach((attachment) => {
+    const item = document.createElement('div');
+    item.className = 'message-attachment';
+
+    const fileName = attachment.name || 'Archivo adjunto';
+    const fileSize = typeof attachment.size === 'number' ? attachment.size : 0;
+    const hasInlineData = Boolean(attachment.dataUrl);
+    const isImage = Boolean(attachment.type && attachment.type.startsWith('image/'));
+
+    if (isImage && hasInlineData) {
+      const preview = document.createElement('a');
+      preview.href = attachment.dataUrl;
+      preview.target = '_blank';
+      preview.rel = 'noopener noreferrer';
+      preview.download = fileName;
+      preview.className = 'message-attachment__image';
+
+      const img = document.createElement('img');
+      img.src = attachment.dataUrl;
+      img.alt = fileName;
+      img.loading = 'lazy';
+      preview.appendChild(img);
+
+      item.appendChild(preview);
+    } else {
+      const icon = document.createElement('span');
+      icon.className = 'message-attachment__icon';
+      icon.textContent = getFileExtension(fileName);
+      item.appendChild(icon);
+    }
+
+    const details = document.createElement('div');
+    details.className = 'message-attachment__details';
+
+    const link = document.createElement('a');
+    link.className = 'message-attachment__link';
+    if (hasInlineData) {
+      link.href = attachment.dataUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.download = fileName;
+    } else {
+      link.href = '#';
+      link.setAttribute('aria-disabled', 'true');
+      link.title = 'Este adjunto se almacena solo como referencia';
+    }
+    link.textContent = fileName;
+    details.appendChild(link);
+
+    const size = document.createElement('span');
+    size.className = 'message-attachment__size';
+    size.textContent = formatFileSize(fileSize);
+    details.appendChild(size);
+
+    if (!hasInlineData) {
+      const note = document.createElement('span');
+      note.className = 'message-attachment__note';
+      note.textContent = 'Solo referencia';
+      details.appendChild(note);
+    }
+
+    item.appendChild(details);
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'message-attachment__remove';
+    removeButton.setAttribute('aria-label', `Eliminar adjunto ${fileName}`);
+    removeButton.textContent = 'Eliminar adjunto';
+    removeButton.addEventListener('click', () => {
+      message.attachments = message.attachments.filter((item) => item.id !== attachment.id);
+      markGroupAsUpdated(group);
+      renderMessages(group);
+      updateMessageMeta(group);
+      scheduleSave();
+    });
+    item.appendChild(removeButton);
+
+    list.appendChild(item);
+  });
+
+  wrapper.appendChild(list);
+}
+
+
+// Refresca contadores y fechas relacionados al grupo
 
 function updateMessageMeta(group) {
   const total = group.messages.length;
@@ -254,6 +413,7 @@ function updateMessageMeta(group) {
   refs.messageCount.textContent = `${total} ${messageLabel} en este prompt`;
 }
 
+// Crea un nuevo grupo y cambia el foco al reciÃ©n creado
 function handleAddGroup() {
   const newGroup = createDefaultGroup();
   appState.groups.unshift(newGroup);
@@ -263,12 +423,13 @@ function handleAddGroup() {
   scheduleSave();
 }
 
+// Elimina el grupo activo y reubica la selecciÃ³n
 function handleDeleteGroup() {
   const group = getSelectedGroup();
   if (!group) return;
 
   const confirmation = window.confirm(
-    `¿Seguro que deseas eliminar "${group.title || 'este grupo'}"? Esta acción no se puede deshacer.`
+    `Â¿Seguro que deseas eliminar "${group.title || 'este grupo'}"? Esta acciÃ³n no se puede deshacer.`
   );
 
   if (!confirmation) return;
@@ -284,6 +445,7 @@ function handleDeleteGroup() {
   scheduleSave();
 }
 
+// Sincroniza el tÃ­tulo editado con el estado del grupo
 function handleTitleChange(event) {
   const group = getSelectedGroup();
   if (!group) return;
@@ -293,42 +455,245 @@ function handleTitleChange(event) {
   scheduleSave();
 }
 
-function handleAddMessage(event) {
+// Inserta un nuevo mensaje en el grupo seleccionado
+async function handleAddMessage(event) {
   event.preventDefault();
   const group = getSelectedGroup();
   if (!group) return;
 
-  const role = refs.newMessageRole.value;
   const content = refs.newMessageContent.value.trim();
-  if (!content) {
+  const pending = refs.pendingAttachments || [];
+  if (!content && !pending.length) {
     refs.newMessageContent.focus();
     return;
   }
 
+  let attachments = [];
+  if (pending.length) {
+    try {
+      attachments = await Promise.all(pending.map((item) => convertFileToAttachment(item.file)));
+    } catch (error) {
+      console.error('No se pudieron procesar los adjuntos del mensaje', error);
+      attachments = [];
+    }
+  }
+
   group.messages.push({
     id: createId('msg'),
-    role,
+    role: 'user',
     content,
+    attachments,
   });
 
   refs.newMessageContent.value = '';
   refs.newMessageContent.style.height = '';
+  autoResizeTextarea(refs.newMessageContent);
+  clearPendingAttachments();
   markGroupAsUpdated(group);
   renderMessages(group);
   updateMessageMeta(group);
   scheduleSave();
 }
+function handleComposerKeyDown(event) {
+  if (event.key !== 'Enter') return;
+  if (!(event.ctrlKey || event.metaKey)) return;
+  event.preventDefault();
+  if (refs.addMessageForm) {
+    if (typeof refs.addMessageForm.requestSubmit === 'function') {
+      refs.addMessageForm.requestSubmit();
+    } else {
+      refs.addMessageForm.submit();
+    }
+  }
+}
 
+function handleAttachmentSelection(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  if (!Array.isArray(refs.pendingAttachments)) {
+    refs.pendingAttachments = [];
+  }
+
+  const newItems = files.map((file) => ({
+    id: createId('att'),
+    file,
+    previewUrl: file.type && file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+  }));
+
+  refs.pendingAttachments = refs.pendingAttachments.concat(newItems);
+  renderPendingAttachmentPreview();
+  event.target.value = '';
+}
+
+function removePendingAttachment(attachmentId) {
+  if (!Array.isArray(refs.pendingAttachments) || !refs.pendingAttachments.length) return;
+  const index = refs.pendingAttachments.findIndex((item) => item.id === attachmentId);
+  if (index === -1) return;
+  const [removed] = refs.pendingAttachments.splice(index, 1);
+  if (removed && removed.previewUrl) {
+    URL.revokeObjectURL(removed.previewUrl);
+  }
+  renderPendingAttachmentPreview();
+}
+
+
+function renderPendingAttachmentPreview() {
+  if (!refs.attachmentPreview) return;
+  const container = refs.attachmentPreview;
+  container.innerHTML = '';
+  const items = Array.isArray(refs.pendingAttachments) ? refs.pendingAttachments : [];
+  if (!items.length) {
+    container.classList.remove('has-items');
+    return;
+  }
+  container.classList.add('has-items');
+
+  items.forEach((item) => {
+    const chip = document.createElement('div');
+    chip.className = 'attachment-chip';
+
+    const fileEntry = item.file || {};
+    const fileName = fileEntry.name || 'archivo';
+    const fileSize = typeof fileEntry.size === 'number' ? fileEntry.size : 0;
+
+    if (item.previewUrl) {
+      const thumb = document.createElement('img');
+      thumb.className = 'attachment-chip__thumb';
+      thumb.src = item.previewUrl;
+      thumb.alt = fileName;
+      thumb.loading = 'lazy';
+      chip.appendChild(thumb);
+    } else {
+      const icon = document.createElement('span');
+      icon.className = 'attachment-chip__icon';
+      icon.textContent = getFileExtension(fileName);
+      chip.appendChild(icon);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'attachment-chip__meta';
+
+    const name = document.createElement('span');
+    name.className = 'attachment-chip__name';
+    name.textContent = fileName;
+    meta.appendChild(name);
+
+    const size = document.createElement('span');
+    size.className = 'attachment-chip__size';
+    size.textContent = formatFileSize(fileSize);
+    meta.appendChild(size);
+
+    chip.appendChild(meta);
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'attachment-chip__remove';
+    removeButton.setAttribute('aria-label', `Eliminar adjunto ${fileName}`);
+    removeButton.textContent = 'Quitar';
+    removeButton.addEventListener('click', () => {
+      removePendingAttachment(item.id);
+    });
+    chip.appendChild(removeButton);
+
+    container.appendChild(chip);
+  });
+}
+
+function clearPendingAttachments() {
+  if (!Array.isArray(refs.pendingAttachments)) {
+    refs.pendingAttachments = [];
+  }
+  refs.pendingAttachments.forEach((item) => {
+    if (item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl);
+    }
+  });
+  refs.pendingAttachments = [];
+  if (refs.attachmentInput) {
+    refs.attachmentInput.value = '';
+  }
+  renderPendingAttachmentPreview();
+}
+
+const MAX_INLINE_ATTACHMENT_BYTES = 1024 * 1024 * 10;
+
+async function convertFileToAttachment(file) {
+  const isImage = Boolean(file.type && file.type.startsWith('image/'));
+  const canInline = typeof file.size === 'number' ? file.size <= MAX_INLINE_ATTACHMENT_BYTES : false;
+  let dataUrl = '';
+
+  if (canInline) {
+    try {
+      dataUrl = await readFileAsDataUrl(file);
+    } catch (error) {
+      console.warn('No se pudo procesar el adjunto para guardarlo en memoria', error);
+    }
+  } else if (isImage) {
+    console.warn('La imagen adjunta supera el tamano maximo inline; se almacenara solo como referencia');
+  }
+
+  return {
+    id: createId('att'),
+    name: file.name,
+    type: file.type || 'application/octet-stream',
+    size: typeof file.size === 'number' ? file.size : 0,
+    dataUrl,
+  };
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo adjunto'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function getFileExtension(filename) {
+  if (typeof filename !== 'string') return 'FILE';
+  const parts = filename.split('.');
+  if (parts.length <= 1) return 'FILE';
+  const ext = parts.pop() || '';
+  return ext.slice(0, 4).toUpperCase() || 'FILE';
+}
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 KB';
+  }
+
+  const units = ['bytes', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  if (unitIndex === 0) {
+    return `${Math.round(size)} bytes`;
+  }
+
+  const decimals = size < 10 && unitIndex < units.length - 1 ? 1 : 0;
+  return `${size.toFixed(decimals)} ${units[unitIndex]}`;
+}
+
+// Actualiza marcas de tiempo de un grupo modificado
 function markGroupAsUpdated(group) {
   const now = new Date().toISOString();
   group.updatedAt = now;
 }
 
+// Ajusta dinÃ¡micamente la altura del textarea segÃºn su contenido
 function autoResizeTextarea(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
+// Programa un guardado diferido para evitar operaciones excesivas
 function scheduleSave() {
   updateSaveIndicator('saving');
   if (saveTimeout) {
@@ -340,6 +705,7 @@ function scheduleSave() {
   }, SAVE_DELAY);
 }
 
+// Persiste el estado actual en localStorage con manejo de errores
 function persistState() {
   try {
     const payload = {
@@ -357,6 +723,7 @@ function persistState() {
   }
 }
 
+// Obtiene el estado inicial desde almacenamiento o crea uno nuevo
 function loadInitialState() {
   const fallback = createDefaultState();
   try {
@@ -374,11 +741,12 @@ function loadInitialState() {
       lastSavedAt: parsed.lastSavedAt || fallback.lastSavedAt,
     };
   } catch (error) {
-    console.warn('No se pudo cargar la información guardada, se usará el estado inicial.', error);
+    console.warn('No se pudo cargar la informaciÃ³n guardada, se usarÃ¡ el estado inicial.', error);
     return fallback;
   }
 }
 
+// Garantiza que un grupo tenga las propiedades necesarias
 function normalizeGroup(group) {
   return {
     id: group.id || createId('group'),
@@ -392,11 +760,35 @@ function normalizeGroup(group) {
             ? message.role
             : 'user',
           content: message.content || '',
+          attachments: Array.isArray(message.attachments)
+            ? message.attachments.map(normalizeAttachment)
+            : [],
         }))
       : [],
   };
 }
+function normalizeAttachment(attachment) {
+  if (!attachment) {
+    return {
+      id: createId('att'),
+      name: 'Archivo adjunto',
+      type: 'application/octet-stream',
+      size: 0,
+      dataUrl: '',
+    };
+  }
 
+  return {
+    id: attachment.id || createId('att'),
+    name: attachment.name || 'Archivo adjunto',
+    type: typeof attachment.type === 'string' && attachment.type ? attachment.type : 'application/octet-stream',
+    size: typeof attachment.size === 'number' ? attachment.size : 0,
+    dataUrl: typeof attachment.dataUrl === 'string' ? attachment.dataUrl : '',
+  };
+}
+
+
+// Construye la estructura base cuando no hay datos guardados
 function createDefaultState() {
   const groups = buildDefaultGroups();
   return {
@@ -406,6 +798,7 @@ function createDefaultState() {
   };
 }
 
+// Prepara ejemplos iniciales para la experiencia de primera ejecuciÃ³n
 function buildDefaultGroups() {
   const now = new Date();
   return [
@@ -431,7 +824,7 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'assistant',
           content:
-            'Claro. Primero validaré el público objetivo y canales clave. Luego diseñaré mensajes diferenciadores para cada etapa, incluyendo preventa, lanzamiento y seguimiento.',
+            'Claro. Primero validarÃ© el pÃºblico objetivo y canales clave. Luego diseÃ±arÃ© mensajes diferenciadores para cada etapa, incluyendo preventa, lanzamiento y seguimiento.',
         },
       ],
     },
@@ -445,7 +838,7 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'system',
           content:
-            'Actúa como un copywriter experto en storytelling que adapta historias de producto a diferentes plataformas y públicos.',
+            'ActÃºa como un copywriter experto en storytelling que adapta historias de producto a diferentes plataformas y pÃºblicos.',
         },
         {
           id: createId('msg'),
@@ -465,19 +858,20 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'system',
           content:
-            'Eres un UX writer que crea microcopys claros, empáticos y orientados a la acción para productos digitales.',
+            'Eres un UX writer que crea microcopys claros, empÃ¡ticos y orientados a la acciÃ³n para productos digitales.',
         },
         {
           id: createId('msg'),
           role: 'assistant',
           content:
-            'Para cada microcopy, solicito tono, contexto y límite de caracteres. Devuelve tres variantes y recomendaciones de prueba A/B.',
+            'Para cada microcopy, solicito tono, contexto y lÃ­mite de caracteres. Devuelve tres variantes y recomendaciones de prueba A/B.',
         },
       ],
     },
   ];
 }
 
+// Genera un grupo vacÃ­o con valores por defecto
 function createDefaultGroup() {
   const now = new Date().toISOString();
   return {
@@ -490,17 +884,20 @@ function createDefaultGroup() {
         id: createId('msg'),
         role: 'system',
         content:
-          'Describe el rol de la IA, el objetivo del prompt y los entregables esperados. Añade luego mensajes de usuario y asistente para completar el contexto.',
+          'Describe el rol de la IA, el objetivo del prompt y los entregables esperados. AÃ±ade luego mensajes de usuario y asistente para completar el contexto.',
+        attachments: [],
       },
     ],
   };
 }
 
+// Recupera el grupo actualmente seleccionado del estado
 function getSelectedGroup() {
   if (!appState.selectedGroupId) return null;
   return appState.groups.find((group) => group.id === appState.selectedGroupId) || null;
 }
 
+// Cambia el indicador visual segÃºn el estado de guardado
 function updateSaveIndicator(status) {
   if (!refs.saveIndicator || !refs.saveText) return;
   refs.saveIndicator.dataset.status = status;
@@ -520,13 +917,15 @@ function updateSaveIndicator(status) {
   }
 }
 
+// Muestra el instante exacto del Ãºltimo guardado exitoso
 function updateLastSavedDisplay() {
   if (!refs.lastSaved) return;
   refs.lastSaved.textContent = appState.lastSavedAt
-    ? `Último guardado · ${formatExactTimestamp(appState.lastSavedAt)}`
-    : 'Sin guardados todavía';
+    ? `Ãšltimo guardado Â· ${formatExactTimestamp(appState.lastSavedAt)}`
+    : 'Sin guardados todavÃ­a';
 }
 
+// Convierte fechas ISO en descripciones relativas legibles
 function formatRelativeTime(isoDate) {
   if (!isoDate) return 'Sin actividad';
   const target = new Date(isoDate);
@@ -555,6 +954,7 @@ function formatRelativeTime(isoDate) {
   });
 }
 
+// Devuelve una marca temporal humanamente legible
 function formatExactTimestamp(isoDate) {
   if (!isoDate) return '';
   const target = new Date(isoDate);
@@ -563,12 +963,13 @@ function formatExactTimestamp(isoDate) {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
-  })} · ${target.toLocaleTimeString('es-ES', {
+  })} Â· ${target.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
   })}`;
 }
 
+// Genera identificadores Ãºnicos con un prefijo dado
 function createId(prefix) {
   if (window.crypto && typeof window.crypto.randomUUID === 'function') {
     return `${prefix}-${window.crypto.randomUUID()}`;
@@ -576,6 +977,7 @@ function createId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// Devuelve el SVG incrustado para los iconos usados en la interfaz
 function createIcon(name) {
   if (name === 'message-circle') {
     return `
@@ -591,6 +993,15 @@ function createIcon(name) {
       </svg>
     `;
   }
+  if (name === 'copy') {
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5v12a.75.75 0 00.75.75h9.75a.75.75 0 00.75-.75V9.75L16.5 6.75h-7.5a.75.75 0 00-.75.75z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 6.75V4.5a.75.75 0 00-.75-.75h-9a.75.75 0 00-.75.75V16.5a.75.75 0 00.75.75H6" />
+      </svg>
+    `;
+  }
+
   if (name === 'trash') {
     return `
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16">
@@ -600,3 +1011,4 @@ function createIcon(name) {
   }
   return '';
 }
+
