@@ -17,7 +17,7 @@ const ROLE_LABELS = {
   assistant: 'Asistente',
 };
 
-// Punto de entrada: inicializa la interfaz cuando el DOM estÃ¡ listo
+// Punto de entrada: inicializa la interfaz cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', () => {
   appState = loadInitialState();
   buildLayout();
@@ -35,7 +35,7 @@ function buildLayout() {
       <aside class="sidebar">
         <div class="sidebar__header">
           <h1 class="sidebar__title">PrompVerse</h1>
-          <p class="sidebar__subtitle">Gestiona, refina y organiza tus prompts temÃ¡ticos.</p>
+          <p class="sidebar__subtitle">Gestiona, refina y organiza tus prompts temáticos.</p>
         </div>
         <div class="sidebar__actions">
           <button class="button button--primary" type="button" data-action="add-group">
@@ -51,7 +51,7 @@ function buildLayout() {
               class="chat-title-input"
               data-chat-title
               type="text"
-              placeholder="TÃ­tulo del grupo de prompts"
+              placeholder="Título del grupo de prompts"
               autocomplete="off"
               spellcheck="false"
             />
@@ -90,7 +90,7 @@ function buildLayout() {
           <div class="attachment-preview-list" data-attachment-preview></div>
           <div class="add-message__row add-message__row--actions">
             <span class="add-message__hint">Ctrl + Enter para enviar</span>
-            <button class="button button--primary" type="submit">AÃ±adir mensaje</button>
+            <button class="button button--primary" type="submit">Añadir mensaje</button>
           </div>
         </form>
       </section>
@@ -136,7 +136,7 @@ function renderSidebar() {
     empty.className = 'empty-state';
     empty.innerHTML = `
       <h3>No hay grupos creados</h3>
-      <p>Comienza aÃ±adiendo un grupo de prompts para organizar tus ideas.</p>
+      <p>Comienza añadiendo un grupo de prompts para organizar tus ideas.</p>
     `;
     refs.groupList.appendChild(empty);
     return;
@@ -149,7 +149,7 @@ function renderSidebar() {
 
     const title = document.createElement('h3');
     title.className = 'prompt-card__title';
-    title.textContent = group.title || 'Sin tÃ­tulo';
+    title.textContent = group.title || 'Sin título';
     card.appendChild(title);
 
     const meta = document.createElement('div');
@@ -176,7 +176,7 @@ function renderSidebar() {
   });
 }
 
-// Actualiza el panel principal segÃºn el grupo seleccionado
+// Actualiza el panel principal según el grupo seleccionado
 function renderChat() {
   const group = getSelectedGroup();
 
@@ -199,7 +199,7 @@ function renderChat() {
     empty.className = 'empty-state';
     empty.innerHTML = `
       <h3>Selecciona o crea un grupo</h3>
-      <p>PodrÃ¡s redactar el contexto del prompt como una conversaciÃ³n y se guardarÃ¡ automÃ¡ticamente.</p>
+      <p>Podrás redactar el contexto del prompt como una conversación y se guardará automáticamente.</p>
     `;
     refs.messageList.appendChild(empty);
     refs.messageCount.textContent = 'Sin mensajes';
@@ -225,7 +225,7 @@ function renderMessages(group) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.innerHTML = `
-      <h3>No hay mensajes todavÃ­a</h3>
+      <h3>No hay mensajes todavía</h3>
       <p>Redacta un mensaje del usuario y agrega adjuntos si lo necesitas.</p>
     `;
     refs.messageList.appendChild(empty);
@@ -413,7 +413,7 @@ function updateMessageMeta(group) {
   refs.messageCount.textContent = `${total} ${messageLabel} en este prompt`;
 }
 
-// Crea un nuevo grupo y cambia el foco al reciÃ©n creado
+// Crea un nuevo grupo y cambia el foco al recién creado
 function handleAddGroup() {
   const newGroup = createDefaultGroup();
   appState.groups.unshift(newGroup);
@@ -423,13 +423,13 @@ function handleAddGroup() {
   scheduleSave();
 }
 
-// Elimina el grupo activo y reubica la selecciÃ³n
+// Elimina el grupo activo y reubica la selección
 function handleDeleteGroup() {
   const group = getSelectedGroup();
   if (!group) return;
 
   const confirmation = window.confirm(
-    `Â¿Seguro que deseas eliminar "${group.title || 'este grupo'}"? Esta acciÃ³n no se puede deshacer.`
+    `¿Seguro que deseas eliminar "${group.title || 'este grupo'}"? Esta acción no se puede deshacer.`
   );
 
   if (!confirmation) return;
@@ -445,7 +445,7 @@ function handleDeleteGroup() {
   scheduleSave();
 }
 
-// Sincroniza el tÃ­tulo editado con el estado del grupo
+// Sincroniza el título editado con el estado del grupo
 function handleTitleChange(event) {
   const group = getSelectedGroup();
   if (!group) return;
@@ -687,7 +687,7 @@ function markGroupAsUpdated(group) {
   group.updatedAt = now;
 }
 
-// Ajusta dinÃ¡micamente la altura del textarea segÃºn su contenido
+// Ajusta dinámicamente la altura del textarea según su contenido
 function autoResizeTextarea(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = `${textarea.scrollHeight}px`;
@@ -741,7 +741,7 @@ function loadInitialState() {
       lastSavedAt: parsed.lastSavedAt || fallback.lastSavedAt,
     };
   } catch (error) {
-    console.warn('No se pudo cargar la informaciÃ³n guardada, se usarÃ¡ el estado inicial.', error);
+    console.warn('No se pudo cargar la información guardada, se usará el estado inicial.', error);
     return fallback;
   }
 }
@@ -798,7 +798,7 @@ function createDefaultState() {
   };
 }
 
-// Prepara ejemplos iniciales para la experiencia de primera ejecuciÃ³n
+// Prepara ejemplos iniciales para la experiencia de primera ejecución
 function buildDefaultGroups() {
   const now = new Date();
   return [
@@ -824,7 +824,7 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'assistant',
           content:
-            'Claro. Primero validarÃ© el pÃºblico objetivo y canales clave. Luego diseÃ±arÃ© mensajes diferenciadores para cada etapa, incluyendo preventa, lanzamiento y seguimiento.',
+            'Claro. Primero validaré el público objetivo y canales clave. Luego diseñaré mensajes diferenciadores para cada etapa, incluyendo preventa, lanzamiento y seguimiento.',
         },
       ],
     },
@@ -838,7 +838,7 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'system',
           content:
-            'ActÃºa como un copywriter experto en storytelling que adapta historias de producto a diferentes plataformas y pÃºblicos.',
+            'Actúa como un copywriter experto en storytelling que adapta historias de producto a diferentes plataformas y públicos.',
         },
         {
           id: createId('msg'),
@@ -858,20 +858,20 @@ function buildDefaultGroups() {
           id: createId('msg'),
           role: 'system',
           content:
-            'Eres un UX writer que crea microcopys claros, empÃ¡ticos y orientados a la acciÃ³n para productos digitales.',
+            'Eres un UX writer que crea microcopys claros, empáticos y orientados a la acción para productos digitales.',
         },
         {
           id: createId('msg'),
           role: 'assistant',
           content:
-            'Para cada microcopy, solicito tono, contexto y lÃ­mite de caracteres. Devuelve tres variantes y recomendaciones de prueba A/B.',
+            'Para cada microcopy, solicito tono, contexto y límite de caracteres. Devuelve tres variantes y recomendaciones de prueba A/B.',
         },
       ],
     },
   ];
 }
 
-// Genera un grupo vacÃ­o con valores por defecto
+// Genera un grupo vacío con valores por defecto
 function createDefaultGroup() {
   const now = new Date().toISOString();
   return {
@@ -884,7 +884,7 @@ function createDefaultGroup() {
         id: createId('msg'),
         role: 'system',
         content:
-          'Describe el rol de la IA, el objetivo del prompt y los entregables esperados. AÃ±ade luego mensajes de usuario y asistente para completar el contexto.',
+          'Describe el rol de la IA, el objetivo del prompt y los entregables esperados. Añade luego mensajes de usuario y asistente para completar el contexto.',
         attachments: [],
       },
     ],
@@ -897,7 +897,7 @@ function getSelectedGroup() {
   return appState.groups.find((group) => group.id === appState.selectedGroupId) || null;
 }
 
-// Cambia el indicador visual segÃºn el estado de guardado
+// Cambia el indicador visual según el estado de guardado
 function updateSaveIndicator(status) {
   if (!refs.saveIndicator || !refs.saveText) return;
   refs.saveIndicator.dataset.status = status;
@@ -917,12 +917,12 @@ function updateSaveIndicator(status) {
   }
 }
 
-// Muestra el instante exacto del Ãºltimo guardado exitoso
+// Muestra el instante exacto del último guardado exitoso
 function updateLastSavedDisplay() {
   if (!refs.lastSaved) return;
   refs.lastSaved.textContent = appState.lastSavedAt
-    ? `Ãšltimo guardado Â· ${formatExactTimestamp(appState.lastSavedAt)}`
-    : 'Sin guardados todavÃ­a';
+    ? `Último guardado · ${formatExactTimestamp(appState.lastSavedAt)}`
+    : 'Sin guardados todavía';
 }
 
 // Convierte fechas ISO en descripciones relativas legibles
@@ -963,13 +963,13 @@ function formatExactTimestamp(isoDate) {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
-  })} Â· ${target.toLocaleTimeString('es-ES', {
+  })} · ${target.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
   })}`;
 }
 
-// Genera identificadores Ãºnicos con un prefijo dado
+// Genera identificadores únicos con un prefijo dado
 function createId(prefix) {
   if (window.crypto && typeof window.crypto.randomUUID === 'function') {
     return `${prefix}-${window.crypto.randomUUID()}`;
